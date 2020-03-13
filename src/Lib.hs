@@ -29,8 +29,7 @@ type Dependency = [Text]
 
 pPackage :: Parser Package
 pPackage = do
-    props <- many $ try $ pProperty
-    _ <- many $ char '\n'
+    props <- (many $ try $ pProperty) <* (many $ char '\n')
     Package <$> getProp "Package" props <*> getProp "Description" props <*> parseDeps props
 
 parseDeps props = case findProp "Depends" props of
