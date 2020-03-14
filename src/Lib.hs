@@ -9,7 +9,7 @@ import qualified Data.Text.IO as TIO
 import Data.Void
 import Data.Maybe(fromMaybe)
 import Data.List (find)
-import Control.Monad.Combinators(sepBy)
+import Control.Monad.Combinators(sepBy, between)
 
 type Parser = Parsec Void Text
 
@@ -65,19 +65,22 @@ pDep :: Parser Text
 pDep = pDepName <* (try $ optional pDepVersion)
 
 pDepVersion :: Parser Text
-pDepVersion = (string " (") *> (T.pack <$> (many $ anySingleBut ')')) <* (char ')')
+pDepVersion = between (string " (") (char ')') (pTextOfChars $ anySingleBut ')')
 
 pDepName :: Parser Text
-pDepName = T.pack <$> (many $ (alphaNumChar <|> oneOf ['-', '.','+']))
+pDepName = pTextOfChars $ (alphaNumChar <|> oneOf ['-', '.','+'])
 
 pFieldName :: Parser Text
-pFieldName = T.pack <$> (many $ (alphaNumChar <|> char '-'))
+pFieldName = pTextOfChars $ (alphaNumChar <|> char '-')
 
 pValue :: Parser Text
-pValue = T.concat <$> ((:) <$> pLine <*> (many $ pContinuation))
+pValue = T.concat <$> ((:) <$> pLine <*> (many pContinuation))
 
 pContinuation :: Parser Text
-pContinuation = T.append "\n" <$> (char ' ' >> pLine)
+pContinuation = (T.append "\n") <$> (char ' ' >> pLine)
 
 pLine :: Parser Text
-pLine = T.pack <$> (many $ anySingleBut '\n') <* (char '\n')
+pLine = (pTextOfChars $ anySingleBut '\n') <* (char '\n')
+
+pTextOfChars :: Parser Char -> Parser Text
+pTextOfChars ch = T.pack <$> (many $ ch)
