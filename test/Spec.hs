@@ -1,4 +1,5 @@
-import Lib(Package, readPackages, packageName, packageDescription, packageDependencies)
+import PackagesParser(readPackagesFromFile)
+import Packages(Package, packageName, packageDescription, packageDependencies)
 import Test.Hspec
 import Data.Maybe(fromJust)
 import Data.List(find)
@@ -21,6 +22,6 @@ main = hspec $ do
 
 readPackage :: Text -> IO Package
 readPackage name = do
-    packages <- readPackages
+    packages <- readPackagesFromFile "status.real.txt"
     return $ fromJust $ find ((== name) . packageName) packages
             

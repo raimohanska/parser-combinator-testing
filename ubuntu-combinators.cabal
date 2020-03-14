@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: dbc95662b8db5cfb5d42e96a8d52997c29958cb74dfd899eb4392be11d6538ea
+-- hash: a35b4946088d726313b85556bcc7aef20add7be7f282159311771a6667feafb2
 
 name:           ubuntu-combinators
 version:        0.1.0.0
@@ -27,7 +27,8 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
+      Packages
+      PackagesParser
   other-modules:
       Paths_ubuntu_combinators
   hs-source-dirs:

@@ -1,6 +1,6 @@
 module Main where
 
-import Lib
+import PackagesParser
 
 main :: IO ()
-main = readPackages >>= putStrLn . (\packages -> "Read " ++ (show $ length packages) ++ " packages")
+main = readPackagesFromFile "status.real.txt" >>= putStrLn . (\packages -> "Read " ++ (show $ length packages) ++ " packages")

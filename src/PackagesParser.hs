@@ -1,8 +1,9 @@
-module Lib where
+module PackagesParser where
 
 import Text.Megaparsec
 import Text.Megaparsec.Char(char, string, alphaNumChar)
 import Text.Megaparsec.Debug(dbg)
+import Text.Megaparsec.Error(ParseErrorBundle)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
@@ -10,23 +11,19 @@ import Data.Void
 import Data.Maybe(fromMaybe)
 import Data.List (find)
 import Control.Monad.Combinators(sepBy, between)
+import Packages
 
 type Parser = Parsec Void Text
 
-readPackages :: IO [Package]
-readPackages = do
-    fileContent <- TIO.readFile "status.real.txt"
-    case runParser (many pPackage) "Packages files" fileContent of
-        Left errors -> fail "Unable to parse deps"
+readPackagesFromFile :: String -> IO [Package]
+readPackagesFromFile filename = do
+    fileContent <- TIO.readFile filename
+    case readPackages fileContent of
+        Left errors -> fail (show errors)
         Right packages -> return packages
 
-data Package = Package
-  { packageName :: Text,
-    packageDescription :: Text,
-    packageDependencies :: [Dependency]
-  } deriving (Eq, Show)
-
-type Dependency = [Text]
+readPackages :: Text -> Either (ParseErrorBundle Text Void) [Package]
+readPackages fileContent = runParser (many pPackage) "Packages files" fileContent
 
 pPackage :: Parser Package
 pPackage = do
