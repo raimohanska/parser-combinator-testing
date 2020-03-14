@@ -9,6 +9,7 @@ import qualified Data.Text.IO as TIO
 import Data.Void
 import Data.Maybe(fromMaybe)
 import Data.List (find)
+import Control.Monad.Combinators(sepBy)
 
 type Parser = Parsec Void Text
 
@@ -55,10 +56,10 @@ pProperty = do
     return (key, value)
 
 pDepends :: Parser [Dependency]
-pDepends = pListSeparatedBy ", " pDepAlternatives
+pDepends = pDepAlternatives `sepBy` (string ", ")
     
 pDepAlternatives :: Parser [Text]
-pDepAlternatives = pListSeparatedBy " | " pDep
+pDepAlternatives = pDep `sepBy` (string " | ")
 
 pDep :: Parser Text
 pDep = pDepName <* (try $ optional pDepVersion)
@@ -80,17 +81,3 @@ pContinuation = T.append "\n" <$> (char ' ' >> pLine)
 
 pLine :: Parser Text
 pLine = T.pack <$> (many $ anySingleBut '\n') <* (char '\n')
-
--- TODO: not nice
-pListSeparatedBy :: Text -> Parser a -> Parser [a]
-pListSeparatedBy sep p = do
-    first <- try $ optional p
-    case first of
-        Just x -> do
-            s <- try $ optional $ string sep
-            case s of
-                Just _ -> do
-                    rest <- pListSeparatedBy sep p
-                    return $ x : rest
-                Nothing -> return [x]
-        Nothing -> return []

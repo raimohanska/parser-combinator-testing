@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: cb02befd45309ef5411f7cb0ee33d47cda1a47697fb96a6f0a89a576c6071fb7
+-- hash: dbc95662b8db5cfb5d42e96a8d52997c29958cb74dfd899eb4392be11d6538ea
 
 name:           ubuntu-combinators
 version:        0.1.0.0
@@ -38,6 +38,7 @@ library
     , containers >0.6
     , hspec
     , megaparsec >=8 && <9
+    , parser-combinators
     , text >1.2
   default-language: Haskell2010
 
@@ -54,6 +55,7 @@ executable ubuntu-combinators-exe
     , containers >0.6
     , hspec
     , megaparsec >=8 && <9
+    , parser-combinators
     , text >1.2
     , ubuntu-combinators
   default-language: Haskell2010
@@ -72,6 +74,7 @@ test-suite ubuntu-combinators-test
     , containers >0.6
     , hspec
     , megaparsec >=8 && <9
+    , parser-combinators
     , text >1.2
     , ubuntu-combinators
   default-language: Haskell2010

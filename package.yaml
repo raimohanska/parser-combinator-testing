@@ -26,6 +26,7 @@ dependencies:
 - megaparsec >=8 && <9
 - text > 1.2
 - containers > 0.6
+- parser-combinators
 - hspec
 
 library:
