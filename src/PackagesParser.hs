@@ -28,28 +28,33 @@ readPackages fileContent = runParser (many pPackage) "Packages files" fileConten
 pPackage :: Parser Package
 pPackage = do
     props <- (many $ try $ pProperty) <* (many $ char '\n')
-    Package <$> getProp "Package" props <*> getProp "Description" props <*> parseDeps props
+    Package <$> getTextProp "Package" props <*> getTextProp "Description" props <*> getDependencies props
 
-parseDeps props = case findProp "Depends" props of
-    Just depString -> case runParser pDepends "Depends field" depString of
-        Left errors -> fail "Unable to parse deps" -- TODO error passing
-        Right text -> return text
-    Nothing -> return []
+data PropertyValue = Text Text | Deps [Dependency]
 
-findProp :: Text -> [(Text, Text)] -> Maybe Text
+findProp :: Text -> [(Text, PropertyValue)] -> Maybe PropertyValue
 findProp name props = fmap snd $ (find (\case (a, b) -> a == name) props)
 
-getProp :: Text -> [(Text, Text)] -> Parser Text
-getProp name props = do
+getDependencies :: [(Text, PropertyValue)] -> Parser [Dependency]
+getDependencies props = do
+    let maybeValue = findProp "Depends" props
+    case maybeValue of
+        Just (Deps deps) -> return deps
+        _ -> return []
+
+getTextProp :: Text -> [(Text, PropertyValue)] -> Parser Text
+getTextProp name props = do
     let maybeValue = findProp name props
     case maybeValue of
-        Just v -> return v
-        Nothing -> fail $ show $ T.append "Missing property " name
+        Just (Text v) -> return v
+        _ -> fail $ show $ T.append "Missing property " name
 
-pProperty :: Parser (Text, Text)
+pProperty :: Parser (Text, PropertyValue)
 pProperty = do
     key <- pFieldName <* (string ":") <* (optional $ char ' ')
-    value <- pValue    
+    value <- case key of
+        "Depends" -> Deps <$> (pDepends <* (char '\n'))
+        _         -> Text <$> pValue
     return (key, value)
 
 pDepends :: Parser [Dependency]
