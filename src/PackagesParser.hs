@@ -11,9 +11,11 @@ import Data.Void
 import Data.Maybe(fromMaybe)
 import Data.List (find)
 import Control.Monad.Combinators(sepBy, between)
+import Control.Monad(void)
 import Packages
 
 type Parser = Parsec Void Text
+data PropertyValue = Text Text | Deps [Dependency]
 
 readPackagesFromFile :: String -> IO [Package]
 readPackagesFromFile filename = do
@@ -27,27 +29,18 @@ readPackages fileContent = runParser (many pPackage) "Packages files" fileConten
 
 pPackage :: Parser Package
 pPackage = do
-    props <- (many $ try $ pProperty) <* (many $ char '\n')
-    Package <$> getTextProp "Package" props <*> getTextProp "Description" props <*> getDependencies props
+    props :: [(Text, PropertyValue)] <- (many $ try pProperty) 
+    void (char '\n')
+    let package = foldl updatePackage (Package "" "" []) props
+    case packageName package of
+        "" -> fail "Nameless package"
+        _ -> return package
 
-data PropertyValue = Text Text | Deps [Dependency]
-
-findProp :: Text -> [(Text, PropertyValue)] -> Maybe PropertyValue
-findProp name props = fmap snd $ (find (\case (a, b) -> a == name) props)
-
-getDependencies :: [(Text, PropertyValue)] -> Parser [Dependency]
-getDependencies props = do
-    let maybeValue = findProp "Depends" props
-    case maybeValue of
-        Just (Deps deps) -> return deps
-        _ -> return []
-
-getTextProp :: Text -> [(Text, PropertyValue)] -> Parser Text
-getTextProp name props = do
-    let maybeValue = findProp name props
-    case maybeValue of
-        Just (Text v) -> return v
-        _ -> fail $ show $ T.append "Missing property " name
+updatePackage :: Package -> (Text, PropertyValue) -> Package
+updatePackage package ("Depends", (Deps deps)) = package { packageDependencies = deps }
+updatePackage package ("Description", (Text desc)) = package { packageDescription = desc }
+updatePackage package ("Package", (Text desc)) = package { packageName = desc }
+updatePackage package _ = package
 
 pProperty :: Parser (Text, PropertyValue)
 pProperty = do
@@ -57,23 +50,23 @@ pProperty = do
         _         -> Text <$> pValue
     return (key, value)
 
+pFieldName :: Parser Text
+pFieldName = pTextOfChars $ (alphaNumChar <|> char '-')
+
 pDepends :: Parser [Dependency]
 pDepends = pDepAlternatives `sepBy` (string ", ")
     
 pDepAlternatives :: Parser [Text]
-pDepAlternatives = pDep `sepBy` (string " | ")
+pDepAlternatives = pDependency `sepBy` (string " | ")
 
-pDep :: Parser Text
-pDep = pDepName <* (try $ optional pDepVersion)
+pDependency :: Parser Text
+pDependency = pDepName <* (try $ optional pDepVersion)
 
 pDepVersion :: Parser Text
 pDepVersion = between (string " (") (char ')') (pTextOfChars $ anySingleBut ')')
 
 pDepName :: Parser Text
 pDepName = pTextOfChars $ (alphaNumChar <|> oneOf ['-', '.','+'])
-
-pFieldName :: Parser Text
-pFieldName = pTextOfChars $ (alphaNumChar <|> char '-')
 
 pValue :: Parser Text
 pValue = T.concat <$> ((:) <$> pLine <*> (many pContinuation))
