@@ -44,11 +44,15 @@ updatePackage package _ = package
 
 pProperty :: Parser (Text, PropertyValue)
 pProperty = do
-    key <- pFieldName <* (string ":") <* (optional $ char ' ')
+    key <- pFieldName
+    pFieldSeparator
     value <- case key of
         "Depends" -> Deps <$> (pDepends <* (char '\n'))
         _         -> Text <$> pValue
     return (key, value)
+
+pFieldSeparator :: Parser ()
+pFieldSeparator = void $ (string ":") >> (optional $ char ' ')
 
 pFieldName :: Parser Text
 pFieldName = pTextOfChars $ (alphaNumChar <|> char '-')
